@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>あなたに合った働き方診断</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Simple fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen font-sans py-10">
+
+    <div id="app" class="w-full max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-6 md:p-10 text-gray-800">
+
+        <!-- Header -->
+        <header class="text-center border-b pb-4 mb-6">
+            <h1 class="text-2xl md:text-3xl font-bold text-indigo-600">あなたに合った働き方診断</h1>
+            <p class="text-gray-500 mt-2">20の質問に答えて、あなたの強みを見つけよう！</p>
+        </header>
+
+        <!-- Question Area -->
+        <div id="question-container">
+            <div id="question-card" class="fade-in">
+                 <p id="question-number" class="text-indigo-500 font-semibold mb-2">質問 1</p>
+                <h2 id="question-text" class="text-xl font-bold mb-6"></h2>
+                <div id="options-container" class="grid grid-cols-1 gap-4">
+                    <!-- Options will be inserted here by JavaScript -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Area -->
+        <div id="result-container" class="hidden text-center fade-in">
+            <h2 class="text-2xl font-bold text-indigo-600 mb-4">診断結果</h2>
+            <div id="result-content" class="bg-indigo-50 p-6 rounded-lg">
+                <p class="text-lg font-semibold mb-2">あなたの適性 TOP3</p>
+                <div id="recommended-courses" class="mt-4"></div>
+                <p id="result-message" class="text-gray-600 mt-6"></p>
+            </div>
+             <button id="restart-button" class="mt-8 bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-300">
+                もう一度診断する
+            </button>
+        </div>
+    </div>
+
+    <!-- The core JavaScript logic is now inside the HTML file -->
+    <script>
+        // --- Diagnosis Data (Rebuilt based on the provided PDF and user feedback) ---
+        const diagnosisData = {
+          "questions": [
+            { "id": 1, "question": "新しいことに挑戦するとき、まず何をしますか？", "options": [ { "id": "a", "text": "関連することを徹底的に調べ、情報を整理する" }, { "id": "b", "text": "まずは全体の構造や仕組みを理解しようとする" }, { "id": "c", "text": "世の中のトレンドや、人々の反応をチェックする" } ] },
+            { "id": 2, "question": "ものづくりで、一番わくわくする瞬間は？", "options": [ { "id": "a", "text": "見た目や使い心地を、美しく直感的にデザインしているとき" }, { "id": "b", "text": "複雑なパーツを、論理的に正しく組み立てているとき" }, { "id": "c", "text": "伝えたい想いを、人の心を動かす物語にしているとき" } ] },
+            { "id": 3, "question": "コツコツと細かい作業を続けるのは…？", "options": [ { "id": "a", "text": "好き、または得意な方だ" }, { "id": "b", "text": "目的のためなら頑張れる" }, { "id": "c", "text": "正直、あまり好きではない" } ] },
+            { "id": 4, "question": "突然トラブルが起きたら、どうしますか？", "options": [ { "id": "a", "text": "原因を冷静に分析し、筋道を立てて解決策を探す" }, { "id": "b", "text": "粘り強く色々な方法を試し、突破口を見つける" }, { "id": "c", "text": "周りの人と協力し、現実的な落としどころを探る" } ] },
+            { "id": 5, "question": "人と話すとき、一番大切にしていることは？", "options": [ { "id": "a", "text": "相手の気持ちに寄り添い、共感すること" }, { "id": "b", "text": "誠実な態度で、長期的な信頼を築くこと" }, { "id": "c", "text": "難しいことでも、分かりやすく噛み砕いて説明すること" } ] },
+            { "id": 6, "question": "計画を立てて、その通りに進めるのは…？", "options": [ { "id": "a", "text": "得意な方だ" }, { "id": "b", "text": "まあまあできる" }, { "id": "c", "text": "苦手な方だ" } ] },
+            { "id": 7, "question": "ヒット商品を見たら、何が気になりますか？", "options": [ { "id": "a", "text": "なぜ人気なのか、そのトレンドの背景" }, { "id": "b", "text": "どうやって作られているのか、その技術的な仕組み" }, { "id": "c", "text": "どうやって利益を出しているのか、そのビジネスの仕組み" } ] },
+            { "id": 8, "question": "「完璧」を目指すなら、どこにこだわりますか？", "options": [ { "id": "a", "text": "見た目の美しさ。1ミリのズレも許せない" }, { "id": "b", "text": "仕組みの正しさ。1つの矛盾も許せない" }, { "id": "c", "text": "完璧よりスピード。まず世に出して反応を見たい" } ] },
+            { "id": 9, "question": "新しいアプリやツール、どうやって覚えますか？", "options": [ { "id": "a", "text": "説明書をしっかり読み、全体を理解してから触る" }, { "id": "b", "text": "とにかく色々いじってみて、感覚で覚えていく" }, { "id": "c", "text": "レビュー動画などを見て、ポイントだけ押さえる" } ] },
+            { "id": 10, "question": "仕事をする上で、一番の原動力になるのは？", "options": [ { "id": "a", "text": "自分の力でビジネスを立ち上げ、成功させること" }, { "id": "b", "text": "誰も解けなかった、難しい問題を解決すること" }, { "id": "c", "text": "自分のセンスで、人の心を動かすものを作ること" } ] },
+            { "id": 11, "question": "ネット上でたくさんの人と交流するのは…？", "options": [ { "id": "a", "text": "好き。会話を盛り上げたり、輪の中心になるのが得意" }, { "id": "b", "text": "情報交換など、目的があれば交流する" }, { "id": "c", "text": "苦手。できれば1人でいたい" } ] },
+            { "id": 12, "question": "あなたにとって「アイデアが良い」とは、どういうことですか？", "options": [ { "id": "a", "text": "誰も思いつかなかった、賢い問題解決の方法" }, { "id": "b", "text": "多くの人の心を掴む、感動的な物語" }, { "id": "c", "text": "常識を覆すような、美しいビジュアル表現" } ] },
+            { "id": 13, "question": "「締切」と「クオリティ」、どちらがより重要ですか？", "options": [ { "id": "a", "text": "クオリティ。中途半端なものは出せない" }, { "id": "b", "text": "締切。決められた時間の中で、ベストを尽くす" }, { "id": "c", "text": "まずはお客様の要望に応えることが最優先" } ] },
+            { "id": 14, "question": "自分の得意なことを、他の人に教えたいですか？", "options": [ { "id": "a", "text": "はい。多くの人に役立つコンテンツにしたい" }, { "id": "b", "text": "はい。身近なチームメンバーの力になりたい" }, { "id": "c", "text": "いいえ。自分の作業に集中したい" } ] },
+            { "id": 15, "question": "決められたルールや手順の中で作業するのは…？", "options": [ { "id": "a", "text": "好き。その方が安心して集中できる" }, { "id": "b", "text": "面白い。制約がある方が、逆に工夫のしがいがある" }, { "id": "c", "text": "苦手。自分のやり方で自由にやりたい" } ] },
+            { "id": 16, "question": "仕事で一番「やってしまった…」と感じる失敗は？", "options": [ { "id": "a", "text": "仕組みの根本的な欠陥を見落としていた" }, { "id": "b", "text": "世間の空気を読まずに発信し、批判が殺到した" }, { "id": "c", "text": "細かい確認を怠り、作品の質を大きく下げてしまった" } ] },
+            { "id": 17, "question": "話のテンポや間が良いと、言われたことがありますか？", "options": [ { "id": "a", "text": "はい、よく言われる" }, { "id": "b", "text": "いいえ、あまり言われない" }, { "id": "c", "text": "むしろ、話が長い、または短いと言われる" } ] },
+            { "id": 18, "question": "常に新しいことを学び続けるのは…？", "options": [ { "id": "a", "text": "好き。知的好奇心を満たすのが楽しい" }, { "id": "b", "text": "仕事で必要なら、当然のこととして学ぶ" }, { "id": "c", "text": "苦手。できればあまり変化はほしくない" } ] },
+            { "id": 19, "question": "人から意見やアドバイスをもらうのは…？", "options": [ { "id": "a", "text": "好き。より良くするためのヒントだと感じる" }, { "id": "b", "text": "客観的な事実として、冷静に受け止める" }, { "id": "c", "text": "苦手。否定されたように感じてしまうことがある" } ] },
+            { "id": 20, "question": "仕事で「最高に嬉しい！」と感じる瞬間は？", "options": [ { "id": "a", "text": "作ったシステムが、設計通りに完璧に動いたとき" }, { "id": "b", "text": "自分の作品が、誰かの心を動かしたと実感したとき" }, { "id": "c", "text": "自分のビジネスが、お客様に感謝されながら成長したとき" } ] }
+          ],
+          "courses": [
+            { "id": 1, "name": "ライター", "reason": "知的好奇心が旺盛で、情報を深く掘り下げて整理するのが得意なあなたに最適です。物事を分かりやすく伝えたり、物語を構築する能力が活かされます。" },
+            { "id": 2, "name": "SNS運用者", "reason": "トレンドに敏感で、人とコミュニケーションを取るのが好きなあなたに合っています。共感力が高く、多くの人と良好な関係を築く才能が活かされます。" },
+            { "id": 3, "name": "オウンドSNSでのコンテンツ販売", "reason": "自分の力でビジネスを動かしたいという、強い起業家精神を持つあなたに向いています。顧客のニーズを深く理解し、価値を提供することに喜びを感じるでしょう。" },
+            { "id": 4, "name": "WEBデザイナー", "reason": "美しいものや、心地よい体験を創り出すことに情熱を注げるあなたにぴったりです。細部へのこだわりと、使う人の気持ちを考える力が強みになります。" },
+            { "id": 5, "name": "動画編集者", "reason": "地道で細かい作業に集中でき、物事のテンポやリズム感を掴むのが得意なあなたに適しています。忍耐強く、一つの作品を完成させることに達成感を感じるでしょう。" },
+            { "id": 6, "name": "エンジニア", "reason": "複雑な問題を論理的に分析し、仕組みを正しく組み立てることに長けているあなたに最適です。知的な探求心と、粘り強い問題解決能力が最大限に活かされます。" }
+          ],
+          "diagnosis_rules": [ { 
+            "scoring_matrix": [
+              { "q": 1, "opt": "a", "score": { "1": 3, "4": 1 } }, { "q": 1, "opt": "b", "score": { "6": 3, "1": 1 } }, { "q": 1, "opt": "c", "score": { "2": 3, "3": 1 } },
+              { "q": 2, "opt": "a", "score": { "4": 3, "5": 1 } }, { "q": 2, "opt": "b", "score": { "6": 3, "4": 1 } }, { "q": 2, "opt": "c", "score": { "1": 3, "5": 2 } },
+              { "q": 3, "opt": "a", "score": { "5": 3, "1": 2, "4": 2, "6": 2 } }, { "q": 3, "opt": "b", "score": { "2": 1, "3": 1 } }, { "q": 3, "opt": "c", "score": {} },
+              { "q": 4, "opt": "a", "score": { "6": 3 } }, { "q": 4, "opt": "b", "score": { "3": 3, "5": 1 } }, { "q": 4, "opt": "c", "score": { "4": 2, "2": 1 } },
+              { "q": 5, "opt": "a", "score": { "2": 3, "4": 2, "1": 1 } }, { "q": 5, "opt": "b", "score": { "3": 3, "2": 1 } }, { "q": 5, "opt": "c", "score": { "6": 2, "5": 1 } },
+              { "q": 6, "opt": "a", "score": { "1": 3, "3": 1 } }, { "q": 6, "opt": "b", "score": { "2": 1, "4": 1, "5": 1, "6": 1 } }, { "q": 6, "opt": "c", "score": {} },
+              { "q": 7, "opt": "a", "score": { "2": 3 } }, { "q": 7, "opt": "b", "score": { "6": 3, "1": 1 } }, { "q": 7, "opt": "c", "score": { "3": 3, "2": 1 } },
+              { "q": 8, "opt": "a", "score": { "4": 3, "5": 2 } }, { "q": 8, "opt": "b", "score": { "6": 3, "1": 1 } }, { "q": 8, "opt": "c", "score": { "3": 2, "2": 1 } },
+              { "q": 9, "opt": "a", "score": { "6": 3, "1": 2 } }, { "q": 9, "opt": "b", "score": { "4": 2, "5": 2 } }, { "q": 9, "opt": "c", "score": { "2": 2, "3": 1 } },
+              { "q": 10, "opt": "a", "score": { "3": 3 } }, { "q": 10, "opt": "b", "score": { "6": 3 } }, { "q": 10, "opt": "c", "score": { "4": 2, "5": 2, "1": 1 } },
+              { "q": 11, "opt": "a", "score": { "2": 3, "3": 2 } }, { "q": 11, "opt": "b", "score": { "1": 1, "4": 1, "6": 1 } }, { "q": 11, "opt": "c", "score": { "5": 1 } },
+              { "q": 12, "opt": "a", "score": { "6": 3 } }, { "q": 12, "opt": "b", "score": { "1": 3, "5": 2 } }, { "q": 12, "opt": "c", "score": { "4": 3 } },
+              { "q": 13, "opt": "a", "score": { "4": 2, "5": 2, "6": 1 } }, { "q": 13, "opt": "b", "score": { "1": 2, "2": 2, "6": 2 } }, { "q": 13, "opt": "c", "score": { "3": 3 } },
+              { "q": 14, "opt": "a", "score": { "3": 3 } }, { "q": 14, "opt": "b", "score": { "1": 1, "2": 1, "4": 1, "6": 1 } }, { "q": 14, "opt": "c", "score": {} },
+              { "q": 15, "opt": "a", "score": { "1": 2, "2": 2, "5": 1, "6": 2 } }, { "q": 15, "opt": "b", "score": { "4": 3 } }, { "q": 15, "opt": "c", "score": { "3": 3 } },
+              { "q": 16, "opt": "a", "score": { "6": 3 } }, { "q": 16, "opt": "b", "score": { "2": 3, "3": 2 } }, { "q": 16, "opt": "c", "score": { "1": 2, "4": 2, "5": 2 } },
+              { "q": 17, "opt": "a", "score": { "5": 3, "1": 1 } }, { "q": 17, "opt": "b", "score": { "2": 1, "3": 1, "4": 1, "6": 1 } }, { "q": 17, "opt": "c", "score": {} },
+              { "q": 18, "opt": "a", "score": { "1": 3, "3": 1 } }, { "q": 18, "opt": "b", "score": { "6": 3, "2": 1 } }, { "q": 18, "opt": "c", "score": {} },
+              { "q": 19, "opt": "a", "score": { "4": 2, "2": 2, "5": 1, "6": 2 } }, { "q": 19, "opt": "b", "score": { "1": 2, "3": 1 } }, { "q": 19, "opt": "c", "score": {} },
+              { "q": 20, "opt": "a", "score": { "6": 3 } }, { "q": 20, "opt": "b", "score": { "1": 2, "2": 2, "4": 2, "5": 2 } }, { "q": 20, "opt": "c", "score": { "3": 3 } }
+            ]
+          } ]
+        };
+
+        // --- DOM Elements ---
+        const questionContainer = document.getElementById('question-container');
+        const questionCard = document.getElementById('question-card');
+        const questionNumberEl = document.getElementById('question-number');
+        const questionTextEl = document.getElementById('question-text');
+        const optionsContainer = document.getElementById('options-container');
+        const resultContainer = document.getElementById('result-container');
+        const recommendedCoursesEl = document.getElementById('recommended-courses');
+        const resultMessageEl = document.getElementById('result-message');
+        const restartButton = document.getElementById('restart-button');
+
+        // --- State Variables ---
+        let currentQuestionIndex = 0;
+        const courseScores = {};
+
+        // --- Functions ---
+
+        /**
+         * Initializes the scores for all courses to zero.
+         */
+        function initializeScores() {
+            diagnosisData.courses.forEach(course => {
+                courseScores[course.id] = 0;
+            });
+        }
+        
+        /**
+         * Displays the final diagnosis result based on calculated scores.
+         */
+        function displayResult() {
+            questionContainer.classList.add('hidden');
+            resultContainer.classList.remove('hidden');
+            resultContainer.classList.add('fade-in');
+
+            const sortedScores = Object.entries(courseScores)
+                .map(([id, score]) => ({ id: parseInt(id), score }))
+                .sort((a, b) => b.score - a.score);
+
+            const top3 = sortedScores.slice(0, 3);
+            
+            const resultHeader = document.querySelector('#result-content > p:first-child');
+            if (resultHeader) {
+                resultHeader.textContent = "あなたの適性 TOP3";
+            }
+
+            recommendedCoursesEl.innerHTML = '';
+            
+            const rankText = ['1位', '2位', '3位'];
+            const rankColors = ['text-amber-500', 'text-slate-500', 'text-orange-600'];
+
+            let displayedCount = 0;
+            top3.forEach((result, index) => {
+                const course = diagnosisData.courses.find(c => c.id === result.id);
+                // Display only if score is positive
+                if (course && result.score > 0) {
+                    displayedCount++;
+                    const resultHTML = `
+                        <div class="text-left ${displayedCount > 1 ? 'border-t border-gray-200 mt-5 pt-5' : ''}">
+                            <p class="text-xl font-bold flex items-baseline">
+                                <span class="text-lg font-extrabold ${rankColors[index]} mr-2">${rankText[index]}</span>
+                                <span class="text-indigo-700">${course.name}</span>
+                            </p>
+                            <p class="text-gray-700 mt-2 pl-10">
+                                <strong class="font-semibold">理由:</strong> ${course.reason}
+                            </p>
+                        </div>
+                    `;
+                    recommendedCoursesEl.innerHTML += resultHTML;
+                }
+            });
+
+            if (displayedCount === 0) {
+                recommendedCoursesEl.innerHTML = '<p class="text-gray-600 text-center">今回は明確な適性が見つかりませんでした。あなたは幅広い分野に興味を持つバランスの取れたタイプかもしれません。</p>';
+            }
+
+            resultMessageEl.textContent = "これらの特性を参考に、あなたの可能性を探ってみてください。";
+        }
+
+
+        /**
+         * Handles the click event for an option button.
+         * @param {number} questionId - The ID of the current question.
+         * @param {string} optionId - The ID of the selected option.
+         */
+        function handleOptionClick(questionId, optionId) {
+            const scoringRule = diagnosisData.diagnosis_rules[0].scoring_matrix.find(
+                rule => rule.q === questionId && rule.opt === optionId
+            );
+            if (scoringRule) {
+                for (const courseId in scoringRule.score) {
+                    courseScores[courseId] += scoringRule.score[courseId];
+                }
+            }
+            
+            questionCard.classList.remove('fade-in');
+
+            setTimeout(() => {
+                if (currentQuestionIndex < diagnosisData.questions.length - 1) {
+                    currentQuestionIndex++; 
+                    displayQuestion(currentQuestionIndex);
+                } else {
+                    displayResult();
+                }
+            }, 300);
+        }
+
+        /**
+         * Displays a question and its options on the screen.
+         * @param {number} questionIndex - The index of the question to display.
+         */
+        function displayQuestion(questionIndex) {
+            const question = diagnosisData.questions[questionIndex];
+            if (!question) return;
+
+            questionTextEl.textContent = question.question;
+            questionNumberEl.textContent = `質問 ${questionIndex + 1}`;
+            optionsContainer.innerHTML = '';
+
+            question.options.forEach(option => {
+                const button = document.createElement('button');
+                button.className = "w-full text-left bg-gray-100 p-4 rounded-lg hover:bg-indigo-100 hover:ring-2 hover:ring-indigo-300 transition-all duration-200";
+                button.textContent = option.text;
+                button.onclick = () => handleOptionClick(question.id, option.id);
+                optionsContainer.appendChild(button);
+            });
+            
+            questionCard.classList.add('fade-in');
+        }
+
+        /**
+         * Resets the state and starts the diagnosis from the beginning.
+         */
+        function startDiagnosis() {
+            currentQuestionIndex = 0;
+            initializeScores();
+
+            resultContainer.classList.add('hidden');
+            questionContainer.classList.remove('hidden');
+
+            displayQuestion(currentQuestionIndex);
+        }
+
+        // --- Event Listeners ---
+        restartButton.addEventListener('click', startDiagnosis);
+
+        // --- Initial Execution ---
+        document.addEventListener('DOMContentLoaded', startDiagnosis);
+    </script>
+</body>
+</html>
+
